@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>School Fight Ranking</title>
+<style>
+:root{--bg:#0b0d12;--panel:#141923;--panel2:#1b2330;--line:#303b4c;--text:#f3f6fb;--muted:#9ba8ba;--gold:#f4bd50;--red:#f05b58;--green:#55d6a0}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at top,#1a2332 0,#0b0d12 55%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+header{padding:26px 18px 20px;text-align:center;border-bottom:1px solid var(--line);background:#0b0d12dd}
+.kicker{color:var(--gold);font-size:.76rem;font-weight:800;letter-spacing:.2em;text-transform:uppercase}
+h1{margin:8px 0 4px;font-size:clamp(1.7rem,5vw,3rem);letter-spacing:.04em}
+header p{color:var(--muted);margin:0}
+.wrap{max-width:1200px;margin:auto;padding:20px 14px 40px}
+.summary{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px;flex:1;min-width:130px}
+.stat strong{display:block;font-size:1.35rem;color:var(--gold)}
+.stat span{font-size:.8rem;color:var(--muted)}
+.tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:16px}
+.tab{border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);padding:12px 8px;font-weight:800;cursor:pointer}
+.tab.active{border-color:var(--gold);background:#302719;color:var(--gold)}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0 16px}
+.toolbar input,.toolbar select{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:11px;min-width:0}
+.toolbar input{flex:1;min-width:170px}
+button{font:inherit}
+.action{border:0;border-radius:9px;padding:11px 14px;font-weight:800;cursor:pointer;background:var(--gold);color:#17130a}
+.action.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
+.action.danger{background:#3a1d22;color:#ffb6b4;border:1px solid #683039}
+.notice{color:var(--muted);font-size:.85rem;margin:0 0 14px}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:#10151e}
+table{width:100%;border-collapse:collapse;min-width:720px}
+th{text-align:left;color:var(--muted);font-size:.76rem;text-transform:uppercase;letter-spacing:.08em;background:#171e29}
+th,td{padding:10px 12px;border-bottom:1px solid #273141}
+tr:last-child td{border-bottom:0}
+td input{width:100%;min-width:70px;background:#0b1018;color:var(--text);border:1px solid #344052;border-radius:7px;padding:8px}
+td input[type=number]{min-width:62px}
+.rank{font-weight:900;color:var(--gold);width:56px}
+.rank.top{color:#fff0b2}
+.name-input{min-width:160px}
+.row-actions{display:flex;gap:6px}
+.mini{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:7px;padding:7px 9px;cursor:pointer}
+.empty{padding:22px;color:var(--muted);text-align:center}
+footer{text-align:center;color:var(--muted);font-size:.8rem;padding:20px}
+@media(max-width:560px){.wrap{padding:14px 9px 28px}.tab{font-size:.8rem;padding:11px 4px}.toolbar .action{flex:1}.stat{padding:10px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="kicker">Disciplina • Técnica • Respeito</div>
+  <h1>🥋 SCHOOL FIGHT RANKING</h1>
+  <p>Ranking esportivo entre turmas — registre resultados com responsabilidade.</p>
+</header>
+<main class="wrap">
+  <section class="summary">
+    <div class="stat"><strong id="totalStudents">0 / 198</strong><span>alunos cadastrados</span></div>
+    <div class="stat"><strong id="totalWins">0</strong><span>vitórias registradas</span></div>
+    <div class="stat"><strong id="activeClass">6º ano</strong><span>ranking selecionado</span></div>
+  </section>
+  <nav class="tabs" id="tabs" aria-label="Selecionar turma"></nav>
+  <div class="toolbar">
+    <input id="search" type="search" placeholder="Buscar aluno nesta turma..." aria-label="Buscar aluno">
+    <select id="sortMode" aria-label="Ordenar ranking">
+      <option value="points">Maior pontuação</option>
+      <option value="wins">Mais vitórias</option>
+      <option value="name">Nome (A–Z)</option>
+    </select>
+    <button class="action" id="addBtn">＋ Adicionar aluno</button>
+    <button class="action secondary" id="exportBtn">Exportar CSV</button>
+  </div>
+  <p class="notice">Cada turma tem 33 posições. Edite os campos diretamente; os dados ficam salvos neste navegador.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Pos.</th><th>Nome do aluno</th><th>Pontos</th><th>Vitórias</th><th>Derrotas</th><th>Observações</th><th>Ação</th></tr></thead>
+      <tbody id="rankingBody"></tbody>
+    </table>
+    <div class="empty" id="empty" hidden>Nenhum aluno corresponde à busca.</div>
+  </div>
+  <div class="toolbar">
+    <button class="action secondary" id="resetClassBtn">Limpar turma selecionada</button>
+    <button class="action danger" id="resetAllBtn">Apagar todos os dados</button>
+  </div>
+</main>
+<footer>Use o ranking para acompanhar o esporte, a evolução técnica e o respeito entre colegas. Combates devem ocorrer apenas com supervisão qualificada e regras de segurança.</footer>
+<script>
+const classes = ["6º ano","7º ano","8º ano A","8º ano B","9º ano A","9º ano B"];
+const KEY = "schoolFightRanking_v1";
+let selected = 0;
+let data = loadData();
+
+function blankStudent(){return {name:"",points:0,wins:0,losses:0,notes:""}}
+function loadData(){
+  try{
+    const saved=JSON.parse(localStorage.getItem(KEY));
+    if(saved && Array.isArray(saved.classes) && saved.classes.length===6){
+      return {classes:saved.classes.map(list=>Array.from({length:33},(_,i)=>({...blankStudent(),...(list[i]||{})})))};
+    }
+  }catch(e){}
+  return {classes:classes.map(()=>Array.from({length:33},blankStudent))};
+}
+function save(){localStorage.setItem(KEY,JSON.stringify(data));updateSummary()}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function renderTabs(){
+  document.getElementById("tabs").innerHTML=classes.map((c,i)=>
+    `<button class="tab ${i===selected?"active":""}" data-class="${i}">${esc(c)}</button>`).join("");
+}
+function getOrdered(){
+  const mode=document.getElementById("sortMode").value;
+  const q=document.getElementById("search").value.trim().toLocaleLowerCase("pt-BR");
+  return data.classes[selected].map((s,i)=>({...s,_i:i}))
+    .filter(s=>!q || s.name.toLocaleLowerCase("pt-BR").includes(q))
+    .sort((a,b)=>{
+      if(mode==="wins") return Number(b.wins)-Number(a.wins)||Number(b.points)-Number(a.points)||a._i-b._i;
+      if(mode==="name") return (a.name||"").localeCompare(b.name||"","pt-BR")||a._i-b._i;
+      return Number(b.points)-Number(a.points)||Number(b.wins)-Number(a.wins)||a._i-b._i;
+    });
+}
+function render(){
+  renderTabs();
+  const rows=getOrdered();
+  const body=document.getElementById("rankingBody");
+  body.innerHTML=rows.map((s,position)=>`<tr data-index="${s._i}">
+    <td class="rank ${position<3&&s.name?"top":""}">${position+1}</td>
+    <td><input class="name-input" data-field="name" value="${esc(s.name)}" maxlength="70" placeholder="Aluno ${s._i+1}" aria-label="Nome do aluno"></td>
+    <td><input type="number" min="0" max="99999" data-field="points" value="${Number(s.points)||0}" aria-label="Pontos"></td>
+    <td><input type="number" min="0" max="9999" data-field="wins" value="${Number(s.wins)||0}" aria-label="Vitórias"></td>
+    <td><input type="number" min="0" max="9999" data-field="losses" value="${Number(s.losses)||0}" aria-label="Derrotas"></td>
+    <td><input data-field="notes" maxlength="120" value="${esc(s.notes)}" placeholder="Opcional" aria-label="Observações"></td>
+    <td><div class="row-actions"><button class="mini clear-one" title="Limpar esta posição" aria-label="Limpar aluno">Limpar</button></div></td>
+  </tr>`).join("");
+  document.getElementById("empty").hidden=rows.length>0;
+  document.getElementById("activeClass").textContent=classes[selected];
+  updateSummary();
+}
+function updateSummary(){
+  const all=data.classes.flat();
+  document.getElementById("totalStudents").textContent=all.filter(s=>s.name.trim()).length+" / 198";
+  document.getElementById("totalWins").textContent=all.reduce((n,s)=>n+(Number(s.wins)||0),0);
+  document.getElementById("activeClass").textContent=classes[selected];
+}
+document.getElementById("tabs").addEventListener("click",e=>{
+  const b=e.target.closest("[data-class]");if(!b)return;
+  selected=Number(b.dataset.class);document.getElementById("search").value="";render();
+});
+document.getElementById("rankingBody").addEventListener("change",e=>{
+  const input=e.target.closest("[data-field]");if(!input)return;
+  const tr=input.closest("tr"),i=Number(tr.dataset.index),field=input.dataset.field;
+  let value=input.value;
+  if(["points","wins","losses"].includes(field)) value=Math.max(0,Math.min(99999,Number(value)||0));
+  data.classes[selected][i][field]=value;
+  save();
+  if(field==="points"||field==="wins"||field==="name") render();
+});
+document.getElementById("rankingBody").addEventListener("click",e=>{
+  const b=e.target.closest(".clear-one");if(!b)return;
+  const i=Number(b.closest("tr").dataset.index);
+  if(confirm("Limpar os dados desta posição?")){data.classes[selected][i]=blankStudent();save();render()}
+});
+document.getElementById("addBtn").addEventListener("click",()=>{
+  const list=data.classes[selected];
+  const i=list.findIndex(s=>!s.name.trim());
+  if(i<0){alert("Esta turma já tem 33 alunos cadastrados.");return}
+  list[i].name="Novo aluno";
+  save();render();
+  const row=document.querySelector(`#rankingBody tr[data-index="${i}"] input[data-field="name"]`);
+  if(row){row.focus();row.select()}
+});
+document.getElementById("search").addEventListener("input",render);
+document.getElementById("sortMode").addEventListener("change",render);
+document.getElementById("resetClassBtn").addEventListener("click",()=>{
+  if(confirm("Apagar os 33 registros da turma "+classes[selected]+"?")){
+    data.classes[selected]=Array.from({length:33},blankStudent);save();render();
+  }
+});
+document.getElementById("resetAllBtn").addEventListener("click",()=>{
+  if(confirm("Apagar todos os dados das seis turmas? Esta ação não pode ser desfeita.")){
+    data={classes:classes.map(()=>Array.from({length:33},blankStudent))};save();render();
+  }
+});
+document.getElementById("exportBtn").addEventListener("click",()=>{
+  const csv=[["Turma","Posição","Aluno","Pontos","Vitórias","Derrotas","Observações"]];
+  classes.forEach((c,ci)=>data.classes[ci].forEach((s,i)=>{
+    csv.push([c,i+1,s.name,s.points,s.wins,s.losses,s.notes]);
+  }));
+  const quote=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+  const content="\uFEFF"+csv.map(row=>row.map(quote).join(";")).join("\r\n");
+  const blob=new Blob([content],{type:"text/csv;charset=utf-8;"});
+  const url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download="school-fight-ranking.csv";a.click();URL.revokeObjectURL(url);
+});
+render();
+</script>
+</body>
+</html>
